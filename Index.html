@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>لوحة بيانات المشروع — ESP32-S3</title>
+  <style>
+    :root {
+      --bg: #0b1020;
+      --card: #131b31;
+      --card-2: #192440;
+      --text: #f1f5f9;
+      --muted: #94a3b8;
+      --accent: #38bdf8;
+      --ok: #22c55e;
+      --warn: #eab308;
+      --border: rgba(148, 163, 184, 0.16);
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      font-family: system-ui, -apple-system, "Segoe UI", Tahoma, Arial, sans-serif;
+      background: radial-gradient(circle at top, #172554 0%, var(--bg) 55%);
+      color: var(--text);
+      min-height: 100vh;
+      padding: 20px;
+    }
+
+    .container {
+      max-width: 720px;
+      margin: 0 auto;
+    }
+
+    .header {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      padding: 22px;
+      margin-bottom: 16px;
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 12px;
+      border-radius: 999px;
+      font-size: 13px;
+      background: rgba(234, 179, 8, 0.14);
+      color: var(--warn);
+      border: 1px solid rgba(234, 179, 8, 0.3);
+      margin-bottom: 12px;
+    }
+
+    .badge.live {
+      background: rgba(34, 197, 94, 0.14);
+      color: var(--ok);
+      border-color: rgba(34, 197, 94, 0.3);
+    }
+
+    h1 {
+      margin: 0 0 8px;
+      font-size: 24px;
+      line-height: 1.35;
+    }
+
+    .desc {
+      margin: 0;
+      color: var(--muted);
+      font-size: 14px;
+      line-height: 1.7;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 14px;
+      margin-bottom: 16px;
+    }
+
+    .metric {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 18px;
+    }
+
+    .metric-label {
+      color: var(--muted);
+      font-size: 13px;
+      margin-bottom: 8px;
+    }
+
+    .metric-val {
+      font-size: 28px;
+      font-weight: 700;
+      color: var(--accent);
+      direction: ltr;
+      text-align: right;
+    }
+
+    .metric-sub {
+      margin-top: 6px;
+      font-size: 12px;
+      color: var(--muted);
+    }
+
+    .panel {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 18px;
+      margin-bottom: 16px;
+    }
+
+    .panel h2 {
+      margin: 0 0 12px;
+      font-size: 17px;
+    }
+
+    .info-list {
+      margin: 0;
+      padding: 0 18px 0 0;
+      color: var(--muted);
+      font-size: 14px;
+      line-height: 1.85;
+    }
+
+    .info-list strong {
+      color: var(--text);
+    }
+
+    .controls {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      align-items: center;
+      justify-content: space-between;
+      margin-top: 14px;
+      padding-top: 14px;
+      border-top: 1px solid var(--border);
+      font-size: 13px;
+      color: var(--muted);
+    }
+
+    button {
+      background: var(--card-2);
+      color: var(--text);
+      border: 1px solid var(--border);
+      padding: 9px 14px;
+      border-radius: 10px;
+      cursor: pointer;
+      font-size: 13px;
+    }
+
+    button:hover {
+      border-color: var(--accent);
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header class="header">
+      <div class="badge" id="statusBadge">وضع عرض تجريبي (Demo Mode)</div>
+      <h1 id="projectTitle">منظومة مراقبة الطاقة — ESP32-S3</h1>
+      <p class="desc" id="projectDesc">
+        صفحة ويب موحدة لمتابعة بيانات المشروع عبر رمز QR واحد من أي جهاز متصل بالإنترنت.
+      </p>
+    </header>
+
+    <section class="grid">
+      <div class="metric">
+        <div class="metric-label">الجهد الكهربائي (Voltage)</div>
+        <div class="metric-val"><span id="voltageVal">12.000</span> V</div>
+        <div class="metric-sub">قياس خط التغذية / المستشعر</div>
+      </div>
+
+      <div class="metric">
+        <div class="metric-label">التيار الكهربائي (Current)</div>
+        <div class="metric-val"><span id="currentVal">350.00</span> mA</div>
+        <div class="metric-sub">تيار الحمل أو المسار المقاس</div>
+      </div>
+
+      <div class="metric">
+        <div class="metric-label">القدرة الكهربائية (Power)</div>
+        <div class="metric-val"><span id="powerVal">4200.00</span> mW</div>
+        <div class="metric-sub">القدرة اللحظية المحسوبة</div>
+      </div>
+    </section>
+
+    <section class="panel">
+      <h2>ملخص المشروع وملاحظات التشغيل</h2>
+      <ul class="info-list">
+        <li><strong>المتحكم:</strong> ESP32-S3 (N16R8 — 16MB Flash / 8MB PSRAM)</li>
+        <li><strong>مستشعر القياس:</strong> INA219 للجهد والتيار والقدرة</li>
+        <li><strong>واجهة العرض:</strong> موقع ويب عبر رمز QR واحد + شاشة 2.4" TFT (عند التركيب)</li>
+        <li><strong>ملاحظة:</strong> <span id="projectNote">البيانات الحالية تجريبية لحين ربط التحديث السحابي المباشر من اللوحة.</span></li>
+      </ul>
+
+      <div class="controls">
+        <span id="lastUpdate">آخر تحديث: —</span>
+        <button type="button" onclick="syncNow()">تحديث الآن</button>
+      </div>
+    </section>
+  </div>
+
+  <script>
+    // =========================================================================
+    // إعداد مصدر البيانات:
+    // اترك DATA_URL فارغاً ("") لاستخدام البيانات التجريبية المحلية،
+    // أو ضع رابط ملف JSON عام (مثلاً من Firebase / Supabase / API) لتحديث القراءات حياً.
+    // =========================================================================
+    const DATA_URL = "";
+
+    const CONFIG = {
+      title: "منظومة مراقبة الطاقة — ESP32-S3",
+      description: "صفحة ويب موحدة لمتابعة بيانات المشروع عبر رمز QR واحد من أي جهاز متصل بالإنترنت.",
+      note: "البيانات الحالية تجريبية لحين ربط التحديث السحابي المباشر من اللوحة."
+    };
+
+    document.getElementById("projectTitle").textContent = CONFIG.title;
+    document.getElementById("projectDesc").textContent = CONFIG.description;
+    document.getElementById("projectNote").textContent = CONFIG.note;
+
+    function renderTelemetry(data, isLive) {
+      const v = Number(data.voltage ?? 0);
+      const i = Number(data.current ?? 0);
+      const p = data.power !== undefined ? Number(data.power) : (v * i);
+
+      document.getElementById("voltageVal").textContent = v.toFixed(3);
+      document.getElementById("currentVal").textContent = i.toFixed(2);
+      document.getElementById("powerVal").textContent = p.toFixed(2);
+
+      const badge = document.getElementById("statusBadge");
+      if (isLive) {
+        badge.textContent = "بيانات محدثة مباشر (Live)";
+        badge.classList.add("live");
+      } else {
+        badge.textContent = "وضع عرض تجريبي (Demo Mode)";
+        badge.classList.remove("live");
+      }
+
+      const now = new Date();
+      document.getElementById("lastUpdate").textContent =
+        "آخر تحديث: " + now.toLocaleTimeString("ar-EG");
+    }
+
+    function generateDemoData() {
+      const sec = Date.now() / 1000;
+      const voltage = 12.0 + 0.25 * Math.sin(sec * 0.4);
+      const current = 360.0 + 45.0 * Math.cos(sec * 0.7);
+      return { voltage, current, power: voltage * current };
+    }
+
+    async function syncNow() {
+      if (!DATA_URL) {
+        renderTelemetry(generateDemoData(), false);
+        return;
+      }
+
+      try {
+        const res = await fetch(DATA_URL, { cache: "no-store" });
+        if (!res.ok) throw new Error("Network response error");
+        const json = await res.json();
+        renderTelemetry(json, true);
+      } catch (err) {
+        renderTelemetry(generateDemoData(), false);
+        document.getElementById("lastUpdate").textContent =
+          "تعذر جلب البيانات الحية — عرض بيانات تجريبية";
+      }
+    }
+
+    syncNow();
+    setInterval(syncNow, 3000);
+  </script>
+</body>
+</html>
